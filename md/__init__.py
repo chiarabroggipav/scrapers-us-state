@@ -15,7 +15,7 @@ class Maryland(Jurisdiction):
 
     scrapers = {
         "people": MarylandPACScraper,
-        "contributions": MarylandContributionsScraper
+        "contributions": MarylandContributionsScraper,
         'registrations': MarylandRegistrationScraper
     }
 

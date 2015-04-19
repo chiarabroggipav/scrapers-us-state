@@ -4,7 +4,7 @@ from pupa.scrape.popolo import Organization
 from lxml import etree
 from lxml.html import HTMLParser
 import scrapelib
-#from datetime import datetime
+
 
 class VirginiaDisclosureScraper(Scraper):
 
@@ -55,24 +55,26 @@ class VirginiaDisclosureScraper(Scraper):
         return(scraped_rows)
 
     def scrape_committees(self):
-        SEARCH_COMMITTEES_URL="http://cfreports.sbe.virginia.gov/"
+        SEARCH_COMMITTEES_URL = "http://cfreports.sbe.virginia.gov/"
 
-        my_scraper = scrapelib.Scraper()
-        _, resp = my_scraper.urlretrieve(SEARCH_COMMITTEES_URL)
+        _, resp = self.urlretrieve(SEARCH_COMMITTEES_URL)
         d = etree.fromstring(resp.content, parser=HTMLParser())
-        number_of_result_pages=int(d.xpath('//span[@id="PagingTotalPages"]/text()')[0])
-        number_of_results=int(d.xpath('//span[@id="PagingTotalRecords"]/text()')[0])
+        ptp = '//span[@id="PagingTotalPages"]/text()'
+        ptr = '//span[@id="PagingTotalRecords"]/text()'
+        number_of_result_pages = int(d.xpath(ptp)[0])
+        number_of_results = int(d.xpath(ptr)[0])
 
         committee_list = []
         for index in range(number_of_result_pages):
-        #for index in range(2):
-            _, resp = my_scraper.urlretrieve(SEARCH_COMMITTEES_URL+
-                                             '?page='+str(index+1))
+        # for index in range(2): # Reduce time for debugging
+            _, resp = self.urlretrieve(SEARCH_COMMITTEES_URL +
+                                       '?page='+str(index+1))
             d = etree.fromstring(resp.content, parser=HTMLParser())
             target_table = d.xpath('//table/tbody')[0]
-            committee_list = committee_list + self.parse_committee_table(target_table)
+            committee_list = committee_list + \
+                self.parse_committee_table(target_table)
 
-        assert len(committee_list) == number_of_results 
+        assert len(committee_list) == number_of_results
 
         for result in committee_list:
             org = Organization(
@@ -81,7 +83,7 @@ class VirginiaDisclosureScraper(Scraper):
             )
             org.add_source(url=SEARCH_COMMITTEES_URL)
             org.source_identified = True
-            yield org 
+            yield org
 
     def scrape(self):
         yield from self.scrape_committees()

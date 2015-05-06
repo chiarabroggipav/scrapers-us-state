@@ -1,6 +1,7 @@
 from pupa.scrape import Scraper
 from pupa.scrape import Person
 import lxml.html
+import cssselect
 
 class MoPersonScraper(Scraper):
 
@@ -8,7 +9,7 @@ class MoPersonScraper(Scraper):
         url = 'http://www.mec.mo.gov/EthicsWeb/CampaignFinance/CF11_SearchComm.aspx'
 
         
-        for letter in ['e', 'i', 'o', 'u', 'y', 'a']:
+        for letter in ['a', 'e', 'i', 'o', 'u', 'y']:
 
             print("Searching '{}'".format(letter))
             initial = self.get(url).text
@@ -16,7 +17,7 @@ class MoPersonScraper(Scraper):
 
             page_n = 0
 
-            data = get_input_data(parsed, first_time=True)
+            data = get_form_data(parsed, first_time=True)
             data['ctl00$ContentPlaceHolder$txtCandLast'] = letter
             
             while True:
@@ -27,19 +28,22 @@ class MoPersonScraper(Scraper):
                 r = self.post(url, data=data, cookies=dict(PageIndex=str(1)))
                     
                 output = lxml.html.fromstring(r.text)
-            
-                seeks = output.xpath('//*[@id="ctl00_ContentPlaceHolder_grvSearch"]/tr[2]/td[3]')
-                if len(seeks):
-                    print(seeks[0].text_content())
+
+                rows = output.cssselect('#ctl00_ContentPlaceHolder_grvSearch tr')
+                
+                for r in rows:
+                    tds = r.cssselect('td')
+                    if len(tds) > 3:
+                        print(tds[2].text_content().strip())
                             
                 if not output.xpath("//*[@id='ctl00_ContentPlaceHolder_grvSearch_ctl28_lbtnNextPage']"):
                     print(output.xpath("//*[@id='ctl00_ContentPlaceHolder_grvSearch_ctl28_lbtnNextPage']"))
                     break
             
-                data = get_input_data(output)
-                        
-        
-def get_input_data(parsed_xml, first_time=False):
+                data = get_form_data(output)
+
+
+def get_form_data(parsed_xml, first_time=False):
     input_names = [
         '__LASTFOCUS', 
         '__EVENTTARGET', 

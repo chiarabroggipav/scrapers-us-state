@@ -1,5 +1,5 @@
 from pupa.scrape import Scraper
-from pupa.scrape import Person
+from pupa.scrape import Person, Organization
 import lxml.html
 import cssselect
 
@@ -34,7 +34,31 @@ class MoPersonScraper(Scraper):
                 for r in rows:
                     tds = r.cssselect('td')
                     if len(tds) > 3:
-                        print(tds[2].text_content().strip())
+
+                        name = tds[2].text_content().strip()
+
+                        _registrant = Person(
+                            name=name,
+                            source_identified=True
+                        )
+                        
+                        committee_name = tds[1].text_content().strip()
+                        _office = Organization(
+                            name=committee_name,
+                            classification='Committee',
+                            # parent_id=self.jurisdiction._state,
+                            source_identified=True
+                        )
+
+                        _office.add_member(
+                            _registrant,
+                            role='committee candidate',
+                            label='candidate for {n}'.format(n=_office.name),
+                        )
+
+                        yield _registrant
+                        yield _office
+
                             
                 if not output.xpath("//*[@id='ctl00_ContentPlaceHolder_grvSearch_ctl28_lbtnNextPage']"):
                     print(output.xpath("//*[@id='ctl00_ContentPlaceHolder_grvSearch_ctl28_lbtnNextPage']"))
